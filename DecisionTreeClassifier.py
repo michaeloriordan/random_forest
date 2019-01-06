@@ -89,26 +89,58 @@ class DecisionTreeClassifier:
             if len(values) > self.max_split_values:
                 percentiles = np.linspace(0, 100, num=self.max_split_values)
                 values = np.percentile(values, percentiles)
-            for value in values:
-                pos_rows = X[:, col] >= value
-                neg_rows = ~pos_rows
 
-                n_pos = np.sum(pos_rows)
-                n_neg = np.sum(neg_rows)
+            pos_rows = np.array([X[:, col] >= v for v in values])
 
-                p = n_pos / len(X)
-                new_entropy = (p * self.entropy(y[pos_rows]) +
-                               (1-p) * self.entropy(y[neg_rows]))
-                entropy_reduction = current_entropy - new_entropy
+            n_pos = np.sum(pos_rows, axis=1)
+            neg_rows = ~pos_rows
+            n_neg = len(X) - n_pos
 
-                if (entropy_reduction > best_reduction and
-                    n_pos >= self.min_samples_leaf and
-                    n_neg >= self.min_samples_leaf):
-                    best_reduction = entropy_reduction
-                    best_col = col
-                    best_value = value
-                    best_pos_rows = pos_rows
-                    best_neg_rows = neg_rows
+            valid_values = ((n_pos >= self.min_samples_leaf) *
+                            (n_neg >= self.min_samples_leaf))
+
+            if valid_values.size == 0:
+                continue
+
+            p = n_pos / len(X)
+
+            new_entropy = (p * np.array([self.entropy(y[pr]) for pr in pos_rows]) +
+                           (1-p) * np.array([self.entropy(y[nr]) for nr in neg_rows]))
+
+            entropy_reduction = current_entropy - new_entropy
+
+            entropy_reduction = entropy_reduction[valid_values]
+            values = values[valid_values]
+            pos_rows = pos_rows[valid_values]
+            neg_rows = neg_rows[valid_values]
+
+            if entropy_reduction.max() > best_reduction:
+                best_reduction = entropy_reduction.max()
+                best_col = col
+                best_value = values[entropy_reduction.argmax()]
+                best_pos_rows = pos_rows[entropy_reduction.argmax()]
+                best_neg_rows = pos_rows[entropy_reduction.argmax()]
+
+            #for value in values:
+            #    pos_rows = X[:, col] >= value
+            #    neg_rows = ~pos_rows
+
+            #    n_pos = np.sum(pos_rows)
+            #    n_neg = np.sum(neg_rows)
+
+            #    p = n_pos / len(X)
+            #    new_entropy = (p * self.entropy(y[pos_rows]) +
+            #                   (1-p) * self.entropy(y[neg_rows]))
+            #    entropy_reduction = current_entropy - new_entropy
+
+            #    if (entropy_reduction > best_reduction and
+            #        n_pos >= self.min_samples_leaf and
+            #        n_neg >= self.min_samples_leaf):
+            #        best_reduction = entropy_reduction
+            #        best_col = col
+            #        best_value = value
+            #        best_pos_rows = pos_rows
+            #        best_neg_rows = neg_rows
 
         if best_reduction > 0:
             pos_branch = self.build_tree(X[best_pos_rows], y[best_pos_rows], depth-1)

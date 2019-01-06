@@ -23,6 +23,11 @@ class RandomForestClassifier:
             return self.fit_parallel(X, y)
         return self.fit_serial(X, y)
 
+    def predict(self, X):
+        y = np.array([tree.predict(X) for tree in self.trees]).T
+        y = np.array([Counter(row).most_common(1)[0][0] for row in y])
+        return y
+
     def fit_serial(self, X, y):
         self.trees = [self.fit_tree(X, y) for i in range(self.n_estimators)]
         return self
@@ -42,8 +47,3 @@ class RandomForestClassifier:
                                       class_weight=self.class_weight,
                                       max_split_values=self.max_split_values)
         return tree.fit(X, y)
-
-    def predict(self, X):
-        y = np.array([tree.predict(X) for tree in self.trees]).T
-        y = np.array([Counter(row).most_common(1)[0][0] for row in y])
-        return y

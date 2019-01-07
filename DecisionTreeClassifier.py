@@ -70,9 +70,9 @@ class DecisionTreeClassifier:
 
     def entropy(self, y):
         counts = Counter(y)
-        proportions = [(count / len(y)) * self.class_weight[key]
-                       for key, count in counts.items()]
-        s = np.sum([-p * np.log2(p) for p in proportions])
+        p = np.array([(count / len(y)) * self.class_weight[key]
+                      for key, count in counts.items()])
+        s = np.sum(-p * np.log2(p))
         return s
 
     def build_tree(self, X, y, depth):

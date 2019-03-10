@@ -3,6 +3,7 @@ import numpy as np
 from math import sqrt
 from collections import Counter
 
+
 class Node:
     def __init__(self, col=-1, value=None, target_counts=None,
                  pos_branch=None, neg_branch=None):
@@ -14,6 +15,7 @@ class Node:
 
     def classification(self):
         return self.target_counts.most_common(1)[0][0]
+
 
 class DecisionTreeClassifier:
     def __init__(self, max_depth=None, max_features=None,
